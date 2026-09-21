@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For You, My Everything</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- RESET & GLOBAL STYLES --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #1a000d 0%, #0d001a 50%, #000000 100%);
+            color: #f5f0f5;
+            overflow-x: hidden;
+        }
+
+        body.locked {
+            overflow: hidden;
+        }
+
+        /* --- BACKGROUND CANVAS (FALLING PETALS) --- */
+        #petalsCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* --- REUSABLE GLASSMORPHISM WORK --- */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            max-width: 650px;
+            width: 90%;
+            text-align: center;
+            transition: all 0.4s ease;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+            letter-spacing: 1px;
+            color: #ffe6f2;
+        }
+
+        section {
+            position: relative;
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem 1.5rem;
+            z-index: 2;
+        }
+
+        /* --- HALAMAN 1: SPLASH SCREEN / GIFT BOX --- */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #2d0016 0%, #05000a 100%);
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+
+        #splash-screen.fade-out {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .gift-container {
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .gift-box {
+            font-size: 6rem;
+            animation: bounceTilt 2.5s infinite ease-in-out;
+            display: inline-block;
+            user-select: none;
+            filter: drop-shadow(0 0 15px rgba(255, 153, 204, 0.4));
+        }
+
+        .gift-text {
+            margin-top: 1.5rem;
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #ff99cc;
+            opacity: 0.8;
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        /* --- HALAMAN 2: THE COVER --- */
+        #cover .cover-title {
+            font-size: 3.2rem;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1.5s ease;
+            text-shadow: 0 0 20px rgba(255, 153, 204, 0.3);
+        }
+
+        #cover .cover-sub {
+            font-size: 1.2rem;
+            font-style: italic;
+            color: #ffb3d9;
+            opacity: 0.8;
+            margin-bottom: 3rem;
+        }
+
+        .scroll-hint {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.6;
+        }
+
+        .sakura-icon {
+            font-size: 1.8rem;
+            animation: spin 6s linear infinite;
+        }
+
+        /* --- HALAMAN 3: THE LETTER --- */
+        .letter-text {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: #e6d9e6;
+            text-align: justify;
+            margin-bottom: 1.5rem;
+        }
+
+        .letter-signature {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            text-align: right;
+            color: #ff99cc;
+            font-size: 1.1rem;
+        }
+
+        /* --- HALAMAN 4: REASONS GRID --- */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 900px;
+            margin-top: 2rem;
+        }
+
+        .reason-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 2rem;
+            text-align: center;
+            backdrop-filter: blur(6px);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .reason-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 153, 204, 0.08);
+            border-color: rgba(255, 153, 204, 0.4);
+            box-shadow: 0 10px 25px rgba(255, 153, 204, 0.15);
+        }
+
+        .reason-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        /* --- HALAMAN 5: INTERACTIVE GARDEN --- */
+        .garden-box {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 3rem;
+            max-width: 700px;
+        }
+
+        .flower-item {
+            position: relative;
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            user-select: none;
+        }
+
+        .flower-item:hover, .flower-item:active {
+            transform: scale(1.25);
+        }
+
+        .tooltip {
+            position: absolute;
+            bottom: 130%;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: rgba(15, 0, 10, 0.95);
+            border: 1px solid #ff99cc;
+            color: #ffe6f2;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .flower-item:hover .tooltip,
+        .flower-item:focus .tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* --- HALAMAN 6: GALLERY --- */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.2rem;
+            max-width: 500px;
+            width: 100%;
+            margin: 2rem 0;
+        }
+
+        .photo-frame {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%;
+            overflow: hidden;
+            border-radius: 12px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            background: #111;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .photo-frame img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(30%) contrast(105%);
+            transition: all 0.5s ease;
+        }
+
+        .photo-frame:hover img {
+            filter: grayscale(0%) contrast(100%);
+            transform: scale(1.05);
+        }
+
+        .gallery-words {
+            display: flex;
+            gap: 1rem;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            color: #ff99cc;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+        }
+
+        /* --- HALAMAN 7: CLOSING --- */
+        .closing-sub {
+            margin-top: 1rem;
+            opacity: 0.7;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        .credits {
+            margin-top: 4rem;
+            font-size: 0.8rem;
+            opacity: 0.4;
+            letter-spacing: 1px;
+        }
+
+        /* --- FLOATING MUSIC PLAYER --- */
+        .music-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(20, 0, 15, 0.85);
+            border: 1px solid rgba(255, 153, 204, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 0.6rem 1rem;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+
+        .music-player.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .play-btn {
+            background: #ff99cc;
+            border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a000d;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .track-info {
+            font-size: 0.75rem;
+            max-width: 140px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .visualizer {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 15px;
+            width: 20px;
+        }
+
+        .bar {
+            width: 3px;
+            height: 2px;
+            background: #ff99cc;
+            animation: pulseBar 0.5s ease infinite alternate;
+            animation-play-state: paused;
+        }
+
+        .playing .bar {
+            animation-play-state: running;
+        }
+        .bar:nth-child(2) { animation-delay: 0.15s; }
+        .bar:nth-child(3) { animation-delay: 0.3s; }
+
+        /* --- ANIMATIONS --- */
+        @keyframes bounceTilt {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-10px) rotate(-5deg); }
+            75% { transform: translateY(-5px) rotate(5deg); }
+        }
+        @keyframes pulse {
+            from { opacity: 0.4; }
+            to { opacity: 0.9; }
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulseBar {
+            from { height: 2px; }
+            to { height: 15px; }
+        }
+
+        /* --- RESPONSIVE DESIGN --- */
+        @media (max-width: 600px) {
+            #cover .cover-title { font-size: 2.2rem; }
+            .grid-container { grid-template-columns: 1fr; }
+            .gallery-grid { max-width: 320px; }
+            .tooltip { white-space: normal; width: 180px; text-align: center; }
+        }
+    </style>
+</head>
+<body class="locked">
+
+    <!-- CANVAS PETALS -->
+    <canvas id="petalsCanvas"></canvas>
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen">
+        <div class="gift-container" onclick="openGift()">
+            <div class="gift-box">🎁</div>
+            <div class="gift-text">coba pencet beb</div>
+        </div>
+    </div>
+
+    <!-- MUSIC PLAYER -->
+    <div class="music-player" id="audioPlayerWidget">
+        <button class="play-btn" onclick="toggleMusic()" id="playBtn">❚❚</button>
+        <div class="track-info">
+            <span style="display:block; font-weight:600;">Because I Will Protect You</span>
+            <span style="opacity:0.6;">Persona 3 Reload OST</span>
+        </div>
+        <div class="visualizer" id="visualizer">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+    </div>
+    
+    <audio id="bgMusic" loop src="image/Music/Because I Will Protect You - Persona 3 Reload OST - Space Cadet.mp3"></audio>
+
+    <!-- SECTION 1: COVER -->
+    <section id="cover">
+        <h1 class="cover-title">For You, My Everything</h1>
+        <p class="cover-sub">A love letter in bloom</p>
+        <div class="scroll-hint">
+            <span class="sakura-icon">🌸</span>
+            <span>Scroll to discover</span>
+        </div>
+    </section>
+
+    <!-- SECTION 2: LETTER -->
+    <section id="letter">
+        <div class="glass-card">
+            <h2 style="margin-bottom: 1.5rem;">Happy Birthday, my favorite person.</h2>
+            <p class="letter-text">
+                Di antara semua hal baik yang pernah datang dalam hidupku, kamu adalah salah satu yang paling berharga. Terima kasih sudah hadir dengan tawa, perhatian, dan segala hal kecil yang tanpa sadar membuat hariku menjadi lebih baik.
+            </p>
+            <p class="letter-text">
+                Aku tidak tahu apa yang akan terjadi di masa depan, tapi aku tahu satu hal: aku bersyukur karena semesta mempertemukanku denganmu.<br><br>
+                Hari ini adalah hari tentangmu. Jadi tersenyumlah sebanyak mungkin, tertawalah lebih keras dari biasanya, dan izinkan dirimu merasa dicintai, karena memang begitu adanya.<br><br>
+                Selamat ulang tahun, Intan Regina Putri. Semoga semua mimpi yang kamu simpan perlahan menemukan jalannya menjadi kenyataan.
+            </p>
+            <p class="letter-signature">— Someone who will always cherish you ❤️</p>
+        </div>
+    </section>
+
+    <!-- SECTION 3: REASONS -->
+    <section id="reasons">
+        <h2>Things I Adore About You</h2>
+        <p style="opacity:0.6; font-style:italic; margin-top:0.5rem; text-align:center;">
+            Not a complete list. Just the ones I can never stop thinking about...
+        </p>
+        <div class="grid-container">
+            <div class="reason-card">
+                <span class="reason-icon">✨</span>
+                <h3>Your Smile</h3>
+                <p style="font-size:0.9rem; opacity:0.7; margin-top:0.5rem;">A simple smile from you somehow makes everything feel lighter.</p>
+            </div>
+            <div class="reason-card">
+                <span class="reason-icon">💫</span>
+                <h3>Your Soul</h3>
+                <p style="font-size:0.9rem; opacity:0.7; margin-top:0.5rem;">Pure, genuine, and more beautiful than any art.</p>
+            </div>
+            <div class="reason-card">
+                <span class="reason-icon">🌸</span>
+                <h3>Your Warm Heart</h3>
+                <p style="font-size:0.9rem; opacity:0.7; margin-top:0.5rem;">No matter how hard your day gets, you still find ways to care about the people around you.</p>
+            </div>
+            <div class="reason-card">
+                <span class="reason-icon">🎵</span>
+                <h3>Your Voice</h3>
+                <p style="font-size:0.9rem; opacity:0.7; margin-top:0.5rem;">The sound of your voice has become one of my favorite comforts in this world.</p>
+            </div>
+            <div class="reason-card">
+                <span class="reason-icon">🛡️</span>
+                <h3>Your Strength</h3>
+                <p style="font-size:0.9rem; opacity:0.7; margin-top:0.5rem;">You've been through things most people never see, yet you continue moving forward.</p>
+            </div>
+            <div class="reason-card">
+                <span class="reason-icon">🌷</span>
+                <h3>The Way You Laugh</h3>
+                <p style="font-size:0.9rem; opacity:0.7; margin-top:0.5rem;">Every laugh of yours feels genuine, and it's one of the happiest sounds I know.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: GARDEN -->
+    <section id="garden">
+        <h2>A Garden Grown Just For You</h2>
+        <p style="opacity:0.6; font-style:italic; text-align:center;">Hover or tap each flower to reveal its secret message</p>
+        <div class="garden-box">
+            <div class="flower-item" tabindex="0">🌹<span class="tooltip">No matter how many years pass, I'd still choose you again.</span></div>
+            <div class="flower-item" tabindex="0">🌸<span class="tooltip">You make ordinary days feel like beautiful memories.</span></div>
+            <div class="flower-item" tabindex="0">🌻<span class="tooltip">Your smile always finds a way to brighten my darkest days.</span></div>
+            <div class="flower-item" tabindex="0">🌷<span class="tooltip">Thank you for staying, even on days when I'm difficult to understand.</span></div>
+            <div class="flower-item" tabindex="0">🌺<span class="tooltip">You're one of the most precious things that has ever happened to me.</span></div>
+            <div class="flower-item" tabindex="0">🪻<span class="tooltip">Whenever life feels overwhelming, your presence brings me peace.</span></div>
+            <div class="flower-item" tabindex="0">🪷<span class="tooltip">I hope your future is filled with happiness as genuine as your heart.</span></div>
+        </div>
+    </section>
+
+    <!-- SECTION 5: GALLERY -->
+    <section id="gallery">
+        <h2>Your Beautiful Pictures</h2>
+        <div class="gallery-grid">
+            <div class="photo-frame"><img src="image/NANAA MODE KEYEN.jpeg" alt="You"></div>
+            <div class="photo-frame"><img src="image/NANAA MODE MOMMYH.jpeg" alt="Are"></div>
+            <div class="photo-frame"><img src="image/NANAA WTH KACAMATA.jpeg" alt="So"></div>
+            <div class="photo-frame"><img src="image/NANAA MY LOVE.jpeg" alt="Beautiful"></div>
+        </div>
+        <div class="gallery-words">
+            <span>you</span> • <span>are</span> • <span>so</span> • <span>beautiful</span>
+        </div>
+    </section>
+
+    <!-- SECTION 6: CLOSING -->
+    <section id="closing">
+        <h1 style="font-size: 2.5rem; text-align: center;">Before You Go...</h1>
+        <p class="closing-sub">Semoga hadiah web kecil ku ini membuat kamu tersenyum.</p>
+        <p class="closing-sub">Semoga hari ini mengingatkanmu betapa sangatnya kamu dicintai.</p>
+        <p class="closing-sub">Dan yang terpenting, Aku harap kamu tidak akan pernah lupa betapa istimewanya dirimu bagiku.</p>
+        <p class="closing-sub" style="color: #ff99cc; font-weight: 600; margin-top: 1.5rem;">Happy Birthday, Regina.</p>
+        <p class="closing-sub">And if life ever feels overwhelming,</p>
+        <p class="closing-sub">remember that someone is always wishing for your happiness.</p>
+        <p class="credits">made with love for Regina's special day • with love, Yuta ❤️</p>
+    </section>
+
+    <!-- JAVASCRIPT logic -->
+    <script>
+        /* --- 1. FALLING PETALS EFFECT (CANVAS) --- */
+        const canvas = document.getElementById('petalsCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let maxPetals = 35;
+        let petalsArray = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Petal {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height - canvas.height;
+                this.size = Math.random() * 8 + 5;
+                this.speedY = Math.random() * 1.5 + 0.8;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.angle = Math.random() * 360;
+                this.spinSpeed = Math.random() * 1 - 0.5;
+                
+                const colors = ['#ffb3d9', '#ff99cc', '#ffccd5', '#ffe6ee'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.opacity = Math.random() * 0.6 + 0.2;
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX + Math.sin(this.y / 30) * 0.5;
+                this.angle += this.spinSpeed;
+
+                if (this.y > canvas.height) {
+                    this.y = -20;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle * Math.PI / 180);
+                ctx.beginPath();
+                ctx.ellipse(0, 0, this.size, this.size / 1.5, 0, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.opacity;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function initPetals() {
+            petalsArray = [];
+            for (let i = 0; i < maxPetals; i++) {
+                petalsArray.push(new Petal());
+            }
+        }
+
+        function animatePetals() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            petalsArray.forEach(petal => {
+                petal.update();
+                petal.draw();
+            });
+            requestAnimationFrame(animatePetals);
+        }
+
+        initPetals();
+        animatePetals();
+
+        /* --- 2. INTERACTIVE ACTIONS (OPEN GIFT & MUSIC) --- */
+        const audio = document.getElementById('bgMusic');
+        const playBtn = document.getElementById('playBtn');
+        const visualizer = document.getElementById('visualizer');
+        const widget = document.getElementById('audioPlayerWidget');
+
+        function openGift() {
+            document.body.classList.remove('locked');
+            document.getElementById('splash-screen').classList.add('fade-out');
+
+            audio.play().then(() => {
+                widget.classList.add('show');
+                visualizer.classList.add('playing');
+                playBtn.innerText = "❚❚";
+            }).catch(err => {
+                console.log("Autoplay blocked. User can click play button manually.");
+                widget.classList.add('show');
+                playBtn.innerText = "▶";
+            });
+
+            setTimeout(() => {
+                document.getElementById('cover').scrollIntoView({ behavior: 'smooth' });
+            }, 400);
+        }
+
+        function toggleMusic() {
+            if (audio.paused) {
+                audio.play();
+                playBtn.innerText = "❚❚";
+                visualizer.classList.add('playing');
+            } else {
+                audio.pause();
+                playBtn.innerText = "▶";
+                visualizer.classList.remove('playing');
+            }
+        }
+    </script>
+</body>
+</html>
